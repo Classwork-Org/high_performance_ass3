@@ -5,10 +5,28 @@
 #include <time.h>
 #include <iostream>
 #include <string.h>
+#include <chrono>
+
+#define ARR1_XSIZE 3
+#define ARR1_YSIZE 3
+#define ARR2_XSIZE 3
+#define ARR2_YSIZE 3
+#define ABS_MAX_VAL 100
+
+#define DEBUG
+
+#define THREADS 24
 
 using std::string;
+using Clock = std::chrono::steady_clock;
+using std::chrono::time_point;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+using std::cout;
+using std::endl;
 
 #define PRINT_ERROR(description) printf("ERROR: %s\n", description)
+#define PRINT_INFO(description) printf("INFO: %s\n", description)
 
 void seed_random_generator()
 {
@@ -66,8 +84,13 @@ void print_matrix(int *arr, unsigned int xSize, unsigned int ySize)
 {
     for (int i = 0; i < ySize; i++)
     {
-        print_array(&arr[i], xSize);
+        for (int j = 0; j < xSize; ++j)
+        {
+            printf("%d ", arr[i*xSize+j]);
+        }
+        printf(" ; ");
     }
+    printf("\n");
 }
 
 int matrix_mult(
@@ -86,31 +109,50 @@ int matrix_mult(
     unsigned int commonSide = xSize1;
     *result = new int[ySize1 * xSize2];
     memset(*result, 0, sizeof(int)*(ySize1 * xSize2));
-    int *sumArray = new int[commonSide];
-    memset(sumArray, 0, sizeof(int)*(commonSide));
+    int *sumArray[THREADS];
+
+    for (int i = 0; i < THREADS; ++i)
+    {
+        sumArray[i] = new int[commonSide];
+        memset(sumArray[i], 0, sizeof(int)*(commonSide));
+    }
+
 
     *resXSize = xSize2;
     *resYSize = ySize1;
 
-    unsigned int res_jj = 0;
     register int sum = 0;
+    
+    #pragma omp parallel for  
     for (unsigned int ii = 0; ii < ySize1; ii++)
     {
+        unsigned int tid = omp_get_thread_num();
+
+        // #pragma omp parallel for
+        #pragma omp parallel for private(sum)
         for (int jj = 0; jj < xSize2; jj++)
         {
+            // #pragma omp parallel for 
             for (unsigned int kk = 0; kk < commonSide; kk++)
             {
-                sumArray[kk] = arr1[ii * xSize1 + kk] * arr2[kk * xSize2 + jj];
+                sumArray[tid][kk] = arr1[ii * xSize1 + kk] * arr2[kk * xSize2 + jj];
             }
             sum = 0;
+            #pragma omp parallel for reduction(+:sum)
             for (unsigned int kk = 0; kk < commonSide; kk++)
             {
-                sum += sumArray[kk];
+                sum += sumArray[tid][kk];
             }
-            (*result)[res_jj++] = sum;
+            (*result)[ii*(*resXSize)+jj] = sum;
         }
+        
     }
-    delete[] sumArray;
+
+    for (int i = 0; i < THREADS; ++i)
+    {
+        delete[] sumArray[i];
+    }
+
     return 0;
 }
 
@@ -118,15 +160,36 @@ int main(int argc, char const *argv[])
 {
     int *arr1, *arr2, *res;
     unsigned int resXSize, resYSize;
+ 
     seed_random_generator();
-    make_const_matrix(&arr1, 10, 10, 2);
-    make_const_matrix(&arr2, 10, 10, 2);
-    if(matrix_mult(arr1, arr2, 10, 10, 10, 10, &res, &resXSize, &resYSize))
+    make_rand_matrix(&arr1, ARR1_XSIZE, ARR1_YSIZE, ABS_MAX_VAL);
+    make_rand_matrix(&arr2, ARR2_XSIZE, ARR2_YSIZE, ABS_MAX_VAL);
+    omp_set_num_threads(THREADS);
+
+    time_point<Clock> start = Clock::now();
+
+    if(matrix_mult(arr1, arr2, ARR1_XSIZE, ARR1_YSIZE, ARR2_XSIZE, ARR2_YSIZE, &res, &resXSize, &resYSize))
     {
         PRINT_ERROR("Failed to multiply matrices due to invalid sizing, exiting....");
         return -1;
     }
+
+    time_point<Clock> end = Clock::now();
+    milliseconds diff = duration_cast<milliseconds>(end - start);
+    printf("mult time %dms\n", diff.count());
+
+    #ifdef DEBUG
+
+    PRINT_INFO("MATRIX A");
+    print_matrix(arr1, ARR1_XSIZE, ARR1_YSIZE);
+
+    PRINT_INFO("MATRIX B");
+    print_matrix(arr2, ARR2_XSIZE, ARR2_YSIZE);
+
+    PRINT_INFO("RESULT");
     print_matrix(res, resXSize, resYSize);
+
+    #endif
 
     delete[] arr1;
     delete[] arr2;

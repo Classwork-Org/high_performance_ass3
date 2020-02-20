@@ -1,4 +1,8 @@
 {
     "C_Cpp.dimInactiveRegions": true,
-    "inline-bookmarks.view.showVisibleFilesOnly": false
+    "inline-bookmarks.view.showVisibleFilesOnly": false,
+    "files.associations": {
+        "iostream": "cpp",
+        "chrono": "cpp"
+    }
 }
