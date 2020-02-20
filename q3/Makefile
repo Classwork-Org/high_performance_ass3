@@ -5,3 +5,7 @@ all:
 
 debug:
 	g++ -g -o main -fopenmp main.cpp
+
+
+clean:
+	rm -rf main
