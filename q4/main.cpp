@@ -7,13 +7,14 @@
 #include <string.h>
 #include <chrono>
 
-#define ARR1_XSIZE 3
-#define ARR1_YSIZE 3
-#define ARR2_XSIZE 3
-#define ARR2_YSIZE 3
+#define ARR1_XSIZE 512
+#define ARR1_YSIZE 512
+#define ARR2_XSIZE 512
+#define ARR2_YSIZE 512
 #define ABS_MAX_VAL 100
 
 #define DEBUG
+// #define FULL_MATRIX
 
 #define THREADS 24
 
@@ -80,6 +81,22 @@ void print_array(int *arr, unsigned int size)
     printf("\n");
 }
 
+void print_matrix_octave(int *arr, unsigned int xSize, unsigned int ySize)
+{
+    for (int i = 0; i < ySize; i++)
+    {
+        for (int j = 0; j < xSize; ++j)
+        {
+            printf("%d ", arr[i*xSize+j]);
+        }
+        if(i < ySize-1)
+        {
+            printf(" ; ");
+        }
+    }
+    printf("\n");
+}
+
 void print_matrix(int *arr, unsigned int xSize, unsigned int ySize)
 {
     for (int i = 0; i < ySize; i++)
@@ -88,9 +105,8 @@ void print_matrix(int *arr, unsigned int xSize, unsigned int ySize)
         {
             printf("%d ", arr[i*xSize+j]);
         }
-        printf(" ; ");
+        printf("\n");
     }
-    printf("\n");
 }
 
 int matrix_mult(
@@ -176,20 +192,41 @@ int main(int argc, char const *argv[])
 
     time_point<Clock> end = Clock::now();
     milliseconds diff = duration_cast<milliseconds>(end - start);
-    printf("mult time %dms\n", diff.count());
+
 
     #ifdef DEBUG
 
-    PRINT_INFO("MATRIX A");
+    printf("\n");
+
+    PRINT_INFO("MATRIX A Octave Form");
+    print_matrix_octave(arr1, ARR1_XSIZE, ARR1_YSIZE);
+
+    PRINT_INFO("MATRIX B Octave Form");
+    print_matrix_octave(arr2, ARR2_XSIZE, ARR2_YSIZE);
+
+    PRINT_INFO("RESULT Octave Form");
+    print_matrix_octave(res, resXSize, resYSize);
+
+    printf("\n");
+
+    #ifdef FULL_MATRIX
+
+    PRINT_INFO("MATRIX A Octave Form");
     print_matrix(arr1, ARR1_XSIZE, ARR1_YSIZE);
+    printf("\n");
 
-    PRINT_INFO("MATRIX B");
+    PRINT_INFO("MATRIX B Octave Form");
     print_matrix(arr2, ARR2_XSIZE, ARR2_YSIZE);
+    printf("\n");
 
-    PRINT_INFO("RESULT");
+    PRINT_INFO("RESULT Octave Form");
     print_matrix(res, resXSize, resYSize);
+    printf("\n");
 
+    #endif    
     #endif
+
+    printf("mult time %dms\n", diff.count());
 
     delete[] arr1;
     delete[] arr2;

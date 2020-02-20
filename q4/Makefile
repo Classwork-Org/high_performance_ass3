@@ -1,8 +1,8 @@
 all:
-	g++ -o main -fopenmp main.cpp
+	g++ -std=c++11 -o main -fopenmp main.cpp
 
 debug:
-	g++ -g -o main -fopenmp main.cpp
+	g++ -g --std=c++11 o main -fopenmp main.cpp
 
 clean:
 	rm -rf main

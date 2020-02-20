@@ -33,7 +33,7 @@ HIGH_PRECISION pow(HIGH_PRECISION base, HIGH_PRECISION exponent)
 
 HIGH_PRECISION f(HIGH_PRECISION x, unsigned int count)
 {
-	HIGH_PRECISION result = 1; 
+	HIGH_PRECISION result = x; 
 	HIGH_PRECISION pow_res = 0; 
 	HIGH_PRECISION factorial_res = 0; 
 	
@@ -50,6 +50,12 @@ int main(int argc, char const *argv[])
 {
 	
 	time_point<Clock> start = Clock::now();
+
+	if(argc != 3)
+	{
+		printf("ERROR: to caculate f(x)=x+e^x a value for x and the number of iterations is needed\n");
+		return -1;
+	}
 
 	HIGH_PRECISION x = atof(argv[1]);
 	HIGH_PRECISION termCount = atof(argv[2]);
