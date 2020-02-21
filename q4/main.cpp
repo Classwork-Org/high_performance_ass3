@@ -9,20 +9,21 @@
 
 #define ARR1_XSIZE 512
 #define ARR1_YSIZE 512
-#define ARR2_XSIZE 512
+#define ARR2_XSIZE 1
 #define ARR2_YSIZE 512
 #define ABS_MAX_VAL 100
 
 #define DEBUG
-// #define FULL_MATRIX
+#define TWO_DIMENTIONAL_REPRESENTATION
+// #define OCTAVE_REPRESENTATION
 
-#define THREADS 24
+#define THREADS 8
 
 using std::string;
 using Clock = std::chrono::steady_clock;
 using std::chrono::time_point;
 using std::chrono::duration_cast;
-using std::chrono::milliseconds;
+using std::chrono::microseconds;
 using std::cout;
 using std::endl;
 
@@ -182,6 +183,17 @@ int main(int argc, char const *argv[])
     make_rand_matrix(&arr2, ARR2_XSIZE, ARR2_YSIZE, ABS_MAX_VAL);
     omp_set_num_threads(THREADS);
 
+    #pragma omp parallel
+    {
+        int  tid = omp_get_thread_num();
+        printf("THREAD[%d] using openmp builtins\n", tid);
+        if(tid == 0)
+        {
+            int max = omp_get_max_threads();
+            printf("THREAD[%d] max threads %d\n", tid, max);
+        }
+    }
+
     time_point<Clock> start = Clock::now();
 
     if(matrix_mult(arr1, arr2, ARR1_XSIZE, ARR1_YSIZE, ARR2_XSIZE, ARR2_YSIZE, &res, &resXSize, &resYSize))
@@ -191,12 +203,14 @@ int main(int argc, char const *argv[])
     }
 
     time_point<Clock> end = Clock::now();
-    milliseconds diff = duration_cast<milliseconds>(end - start);
+    microseconds diff = duration_cast<microseconds>(end - start);
 
 
     #ifdef DEBUG
 
     printf("\n");
+
+    #ifdef OCTAVE_REPRESENTATION
 
     PRINT_INFO("MATRIX A Octave Form");
     print_matrix_octave(arr1, ARR1_XSIZE, ARR1_YSIZE);
@@ -208,25 +222,26 @@ int main(int argc, char const *argv[])
     print_matrix_octave(res, resXSize, resYSize);
 
     printf("\n");
+    #endif
 
-    #ifdef FULL_MATRIX
+    #ifdef TWO_DIMENTIONAL_REPRESENTATION
 
-    PRINT_INFO("MATRIX A Octave Form");
+    PRINT_INFO("MATRIX A 2D Form");
     print_matrix(arr1, ARR1_XSIZE, ARR1_YSIZE);
     printf("\n");
 
-    PRINT_INFO("MATRIX B Octave Form");
+    PRINT_INFO("MATRIX B 2D Form");
     print_matrix(arr2, ARR2_XSIZE, ARR2_YSIZE);
     printf("\n");
 
-    PRINT_INFO("RESULT Octave Form");
+    PRINT_INFO("RESULT 2D Form");
     print_matrix(res, resXSize, resYSize);
     printf("\n");
 
     #endif    
     #endif
 
-    printf("mult time %dms\n", diff.count());
+    printf("mult time %dus\n", diff.count());
 
     delete[] arr1;
     delete[] arr2;
